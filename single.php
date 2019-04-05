@@ -1,60 +1,122 @@
-<?php
-/**
- * The template for displaying all single posts
- *
- * @link https://developer.wordpress.org/themes/basics/template-hierarchy/#single-post
- *
- * @package WordPress
- * @subpackage Twenty_Nineteen
- * @since 1.0.0
- */
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Chapter - Test</title>
+    <style media="screen">
+    body{
+      font-family:helvetica;
+      padding:50px;
+      font-size:22px;
+    }
+    .define {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
 
-get_header();
-?>
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    }
 
-	<section id="primary" class="content-area">
-		<main id="main" class="site-main">
+    .has-definition:hover .define{
+    visibility: visible;
+    }
 
-			<?php
+    .has-definition{
+    cursor: pointer;
+    border-bottom:2px dotted blue;
+    }
 
-			/* Start the Loop */
-			while ( have_posts() ) :
-				the_post();
+    .lineBreak{
+      height:20px;
+    }
 
-				get_template_part( 'template-parts/content/content', 'single' );
+    </style>
+  </head>
+  <body>
+    <h2>This is a single chapter page</h2>
 
-				if ( is_singular( 'attachment' ) ) {
-					// Parent post navigation.
-					the_post_navigation(
-						array(
-							/* translators: %s: parent post link */
-							'prev_text' => sprintf( __( '<span class="meta-nav">Published in</span><span class="post-title">%s</span>', 'twentynineteen' ), '%title' ),
-						)
-					);
-				} elseif ( is_singular( 'post' ) ) {
-					// Previous/next post navigation.
-					the_post_navigation(
-						array(
-							'next_text' => '<span class="meta-nav" aria-hidden="true">' . __( 'Next Post', 'twentynineteen' ) . '</span> ' .
-								'<span class="screen-reader-text">' . __( 'Next post:', 'twentynineteen' ) . '</span> <br/>' .
-								'<span class="post-title">%title</span>',
-							'prev_text' => '<span class="meta-nav" aria-hidden="true">' . __( 'Previous Post', 'twentynineteen' ) . '</span> ' .
-								'<span class="screen-reader-text">' . __( 'Previous post:', 'twentynineteen' ) . '</span> <br/>' .
-								'<span class="post-title">%title</span>',
-						)
-					);
-				}
+    <?php
+      $audio = get_field( "audio" );
+      $json = get_field( "json" );
+    ?>
 
-				// If comments are open or we have at least one comment, load up the comment template.
-				if ( comments_open() || get_comments_number() ) {
-					comments_template();
-				}
+    <audio controls id ="audiofile">
+      <source src="<?php echo $audio['url']; ?>" type="audio/mp3">
+      Your browser does not support the audio element.
+    </audio>
 
-			endwhile; // End of the loop.
-			?>
+    <div id="subtitles"></div>
+    <p id="demo"></p>
 
-		</main><!-- #main -->
-	</section><!-- #primary -->
+    <script type="text/javascript">
+    // pass PHP variable declared above to JavaScript variable
+    var myObj, i, x = "";
+    myObj = <?php echo $json ?>;
+    console.log(myObj);
 
-<?php
-get_footer();
+    for (i in myObj.fragments) {
+        delete myObj.fragments[i].language;
+        delete myObj.fragments[i].children;
+        myObj.fragments[i].start = myObj.fragments[i].begin;
+        myObj.fragments[i].text = myObj.fragments[i].lines[0];
+        delete myObj.fragments[i].begin;
+        delete myObj.fragments[i].lines;
+    }
+
+    document.getElementById("demo").innerHTML = x;
+
+            ( function(win, doc) {
+                var audioPlayer = doc.getElementById("audiofile");
+                var subtitles = doc.getElementById("subtitles");
+                var syncData = myObj.fragments;
+                createSubtitle();
+
+                function createSubtitle()
+                {
+                    var element;
+                    var definition;
+                    for (var i = 0; i < syncData.length; i++) {
+                        element = doc.createElement('span');
+                        element.setAttribute("id", "c_" + i);
+                        element.innerText = syncData[i].text + " ";
+
+                        if(syncData[i].hasOwnProperty('define')){
+                          definition = doc.createElement('span');
+                          definition.setAttribute("class", "define");
+                          definition.innerText = syncData[i].define + " ";
+                          element.appendChild(definition);
+                          element.setAttribute("class", "has-definition");
+                        }
+
+                        if(syncData[i].hasOwnProperty('linebreak')){
+                          lineBreak = doc.createElement('div');
+                          lineBreak.setAttribute("class", "lineBreak");
+                          element.appendChild(lineBreak);
+                        }
+
+                          subtitles.appendChild(element);
+                        }
+
+
+                    }
+
+                audioPlayer.addEventListener("timeupdate", function(e){
+                    syncData.forEach(function(element, index, array){
+                        if( audioPlayer.currentTime >= element.start && audioPlayer.currentTime <= element.end ){
+                            subtitles.children[index].style.background = 'yellow';
+                          }else{
+                            subtitles.children[index].style.background = '#f2f2f2';
+                          }
+                    });
+                });
+            }(window, document));
+    </script>
+
+  </body>
+</html>
